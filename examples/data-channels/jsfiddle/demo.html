@@ -2,6 +2,8 @@
 	SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
 	SPDX-License-Identifier: MIT
 -->
+<!-- 许可声明：该示例遵循 MIT 开源许可。 -->
+<script src="./demo.js"></script>
 Browser base64 Session Description<br />
 <textarea id="localSessionDescription" readonly="true"></textarea> <br />
 <button onclick="window.copySDP()">
@@ -9,12 +11,14 @@ Browser base64 Session Description<br />
 </button>
 <br />
 <br />
+<!-- 上方区域：显示浏览器端本地描述（含 ICE 候选）的 base64 编码文本；点击按钮复制到剪贴板。 -->
 
 Golang base64 Session Description<br />
 <textarea id="remoteSessionDescription"></textarea><br/>
 <button onclick="window.startSession()">Start Session</button><br />
 
 <br />
+<!-- 中间区域：在输入框中粘贴服务端输出的 Answer（base64），点击 Start Session 完成握手。 -->
 
 Message<br />
 <textarea id="message">This is my DataChannel message!</textarea> <br/>
@@ -23,3 +27,4 @@ Message<br />
 <br />
 Logs<br />
 <div id="logs"></div>
+<!-- 下方区域：输入并发送 DataChannel 文本消息；日志显示事件与收发内容。 -->
