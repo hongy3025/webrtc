@@ -1,4 +1,7 @@
 <html>
+  <!-- 中文说明：该页面为 ICE-TCP 示例的前端。通过一次性信令与后端协商，
+       浏览器创建 RTCPeerConnection 和 DataChannel，在成功连接后接收服务端
+       每三秒发送的时间消息，并展示 ICE 连接状态变化。 -->
   <!--
 		SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
 		SPDX-License-Identifier: MIT
@@ -18,9 +21,13 @@
   </body>
 
   <script>
+    // 中文：创建一个 RTCPeerConnection（使用浏览器默认 ICE 设置）。
+    // 注意：后端仅启用 TCP 候选，因此最终选择的候选对会是 TCP 类型。
     let pc = new RTCPeerConnection()
+    // 中文：本地创建一个 DataChannel，触发服务端 OnDataChannel 并由服务端在打开后定时发消息。
     let dc = pc.createDataChannel('data')
 
+    // 中文：当接收到服务端通过 DataChannel 推送的文本消息（时间字符串）时，追加到页面展示。
     dc.onmessage = event => {
       let el = document.createElement('p')
       el.appendChild(document.createTextNode(event.data))
@@ -28,6 +35,7 @@
       document.getElementById('inboundDataChannelMessages').appendChild(el);
     }
 
+    // 中文：监听 ICE 连接状态变化（new/checking/connected/disconnected/failed/closed），并追加到页面。
     pc.oniceconnectionstatechange = () => {
       let el = document.createElement('p')
       el.appendChild(document.createTextNode(pc.iceConnectionState))
@@ -35,6 +43,10 @@
       document.getElementById('iceConnectionStates').appendChild(el);
     }
 
+    // 中文：一次性信令流程（未启用 Trickle ICE）：
+    // 1) 创建本地 Offer 并设置为本地描述
+    // 2) 将 Offer 以 JSON 发送到后端 /doSignaling
+    // 3) 接收后端返回的 Answer 并设置为远端描述
     pc.createOffer()
       .then(offer => {
         pc.setLocalDescription(offer)
@@ -50,6 +62,7 @@
       })
       .then(res => res.json())
       .then(res => {
+        // 中文：设置服务端返回的 Answer 完成协商，随后 ICE 将挑选出 TCP 候选并建立连接。
         pc.setRemoteDescription(res)
       })
       .catch(alert)
