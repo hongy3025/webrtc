@@ -8,20 +8,25 @@
   </head>
 
   <body>
+    <!-- 点击触发一次带 {iceRestart: true} 的 Offer，演示重启 -->
     <button onclick="window.doSignaling(true)"> ICE Restart </button><br />
 
 
+    <!-- 展示 ICE 连接状态变更日志（checking/connected/disconnected/failed 等） -->
     <h3> ICE Connection States </h3>
     <div id="iceConnectionStates"></div> <br />
 
+    <!-- 定期读取当前选定的候选对（local/remote）并显示，观察重启后变化 -->
     <h3> ICE Selected Pairs </h3>
     <div id="iceSelectedPairs"></div> <br />
 
+    <!-- 展示来自服务端的 DataChannel 文本消息（每 3 秒发送当前时间） -->
     <h3> Inbound DataChannel Messages </h3>
     <div id="inboundDataChannelMessages"></div>
   </body>
 
   <script>
+    // 创建 RTCPeerConnection，提供公共 STUN 服务器以收集候选
     let pc = new RTCPeerConnection({
       iceServers: [
         {
@@ -29,11 +34,14 @@
         }
       ]
     })
+    // 主动创建一个名为 'data' 的 DataChannel，连接建立后与服务端互通
     let dc = pc.createDataChannel('data')
 
+    // DataChannel 打开后：每 3 秒展示当前选定的 ICE Candidate Pair
     dc.onopen = () => {
       setInterval(function() {
         let el = document.createElement('template')
+        // 通过 SCTP -> DTLS -> ICETransport 获取当前选中的候选对
         let selectedPair = pc.sctp.transport.iceTransport.getSelectedCandidatePair()
 
         el.innerHTML = `<div>
@@ -47,6 +55,7 @@
       }, 3000);
     }
 
+    // 收到服务端经 DataChannel 发送的文本（当前时间），追加到页面
     dc.onmessage = event => {
       let el = document.createElement('p')
       el.appendChild(document.createTextNode(event.data))
@@ -54,6 +63,7 @@
       document.getElementById('inboundDataChannelMessages').appendChild(el);
     }
 
+    // 监听 ICE 连接状态并追加日志，用于观察重启效果
     pc.oniceconnectionstatechange = () => {
       let el = document.createElement('p')
       el.appendChild(document.createTextNode(pc.iceConnectionState))
@@ -62,10 +72,11 @@
     }
 
 
+    // 执行信令交换：生成 Offer（可选启用 ICE Restart），POST 至服务端，设置返回的 Answer
     window.doSignaling = iceRestart => {
       pc.createOffer({iceRestart})
         .then(offer => {
-          pc.setLocalDescription(offer)
+          pc.setLocalDescription(offer) // 设置本地描述，触发候选收集
 
           return fetch(`/doSignaling`, {
             method: 'post',
@@ -73,14 +84,15 @@
               'Accept': 'application/json, text/plain, */*',
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify(offer)
+            body: JSON.stringify(offer) // 仅进行一次性信令交换，未开启 Trickle
           })
         })
         .then(res => res.json())
-        .then(res => pc.setRemoteDescription(res))
+        .then(res => pc.setRemoteDescription(res)) // 设置远端描述，完成协商
         .catch(alert)
     }
 
+    // 页面加载后自动发起一次普通协商，建立连接
     window.doSignaling(false)
   </script>
 </html>

@@ -2,7 +2,9 @@
 	SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
 	SPDX-License-Identifier: MIT
 -->
+<!-- 页面说明：用于与服务端进行简单的 base64 SDP 交换，完成发布/订阅 -->
 <div id="signalingContainer" style="display: none">
+  <!-- 本地（浏览器）会话描述，自动填入（base64 JSON） -->
   Browser base64 Session Description<br />
   <textarea id="localSessionDescription" readonly="true"></textarea> <br />
   <button onclick="window.copySDP()">
@@ -11,6 +13,7 @@
   <br />
   <br />
 
+  <!-- 服务端（Golang 程序）会话描述，粘贴至此（base64 JSON） -->
   Golang base64 Session Description<br />
   <textarea id="remoteSessionDescription"></textarea> <br/>
   <button onclick="window.startSession()"> Start Session </button><br />
@@ -18,13 +21,16 @@
 
 <br />
 
+<!-- 视频播放区域：发布者本地预览或订阅者远端播放 -->
 Video<br />
 <video id="video1" width="160" height="120" autoplay muted></video> <br />
 
+<!-- 入口：选择发布广播或加入观看，点击后显示上方信令区域 -->
 <button class="createSessionButton" onclick="window.createSession(true)"> Publish a Broadcast </button>
 <button class="createSessionButton" onclick="window.createSession(false)"> Join a Broadcast </button><br />
 
 <br />
 
+<!-- 日志输出：显示 ICE 状态变化及操作提示 -->
 Logs<br />
 <div id="logs"></div>
