@@ -8,17 +8,21 @@
   </head>
 
   <body>
+    <!-- 展示当前选定的 ICE 候选对（本地/远端），用于观察单端口复用下的连接信息 -->
     <h3> ICE Selected Pairs </h3>
     <div id="iceSelectedPairs"></div> <br />
   </body>
 
   <script>
+    // 创建一个 PeerConnection 并发起协商；页面末尾会创建多个以验证“单端口多连接”
     let createPeerConnection = () => {
       let pc = new RTCPeerConnection()
       let dc = pc.createDataChannel('data')
 
+      // DataChannel 打开后：读取当前选中的候选对并显示到页面
       dc.onopen = () => {
         let el = document.createElement('template')
+        // 通过 SCTP -> DTLS -> ICETransport 取出选中的候选对（local/remote）
         let selectedPair = pc.sctp.transport.iceTransport.getSelectedCandidatePair()
 
         el.innerHTML = `<div>
@@ -31,6 +35,7 @@
         document.getElementById('iceSelectedPairs').appendChild(el.content.firstChild);
       }
 
+      // 一次性信令：创建 Offer，设置本地描述，POST 给服务端；将返回的 Answer 设为远端描述
       pc.createOffer()
         .then(offer => {
           pc.setLocalDescription(offer)
@@ -49,6 +54,7 @@
         .catch(alert)
     }
 
+    // 连续创建 10 个 PeerConnection：在服务端复用同一个 UDP 端口进行承载
     for (i = 0; i < 10; i++) {
       createPeerConnection()
     }
