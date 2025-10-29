@@ -21,12 +21,12 @@ const log = msg => {
 navigator.mediaDevices.getUserMedia({ video: true, audio: true })
   .then(stream => {
     stream.getTracks().forEach(track => pc.addTrack(track, stream))
-    pc.createOffer().then(d => pc.setLocalDescription(d)).catch(log)
-  }).catch(log)
+    pc.createOffer().then(d => pc.setLocalDescription(d)).catch((err) => log('[1]' + err))
+  }).catch((err) => log('[2]' + err))
 // 采集本地媒体（视频+音频），并将每条轨添加到 RTCPeerConnection。
 // 创建本地 SDP Offer 并设置为本地描述，启动连接流程；错误通过 log 输出。
 
-pc.oniceconnectionstatechange = e => log(pc.iceConnectionState)
+pc.oniceconnectionstatechange = e => log('[3]' + pc.iceConnectionState)
 // ICE 连接状态变化时记录当前状态（如 checking、connected、disconnected 等）。
 pc.onicecandidate = event => {
   if (event.candidate === null) {
@@ -68,9 +68,9 @@ window.copySDP = () => {
   try {
     const successful = document.execCommand('copy')
     const msg = successful ? 'successful' : 'unsuccessful'
-    log('Copying SDP was ' + msg)
+    log('[4] Copying SDP was ' + msg)
   } catch (err) {
-    log('Unable to copy SDP ' + err)
+    log('[5] Unable to copy SDP ' + err)
   }
 }
 // 将页面中的本地 SDP 文本复制到剪贴板，便于粘贴到服务器终端。

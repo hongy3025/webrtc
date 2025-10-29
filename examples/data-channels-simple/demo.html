@@ -15,35 +15,47 @@
   <pre id="log"></pre>
 
   <script>
+    // 创建浏览器端的 RTCPeerConnection，配置 STUN 服务器以进行 NAT 穿透
     const pc = new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});
+    // 创建一个 DataChannel，名称为 "chat"，用于文本消息收发
     const channel = pc.createDataChannel("chat");
 
     // Connection state monitoring
+    // 当整体连接状态变化时（new/connecting/connected/disconnected/failed/closed）输出日志
     pc.onconnectionstatechange = () => log(`🔄 Connection state: ${pc.connectionState}`);
+    // ICE 层连接状态变化（checking/connected/disconnected/failed 等）输出日志
     pc.oniceconnectionstatechange = () => log(`🧊 ICE state: ${pc.iceConnectionState}`);
+    // 信令状态变化（stable/have-local-offer/have-remote-offer 等）输出日志
     pc.onsignalingstatechange = () => log(`📞 Signaling state: ${pc.signalingState}`);
 
+    // 当 DataChannel 打开时，启用发送按钮并提示可用
     channel.onopen = () => {
       log("✅ DataChannel opened");
       document.getElementById("sendBtn").disabled = false;
     }
+    // 收到服务端消息时，输出到日志
     channel.onmessage = e => log(`📩 Server: ${e.data}`);
 
+    // 本端 ICE 候选产生时，上报到服务端，以便进行增量候选交换（Trickle ICE）
     pc.onicecandidate = event => {
       if(event.candidate){
+        const candidate = JSON.stringify(event.candidate, null, 2);
+        log(`🧊 ICE candidate: ${candidate}`);
         fetch("/candidate", {
           method: "POST",
           headers: {"Content-Type": "application/json"},
-          body: JSON.stringify(event.candidate),
+          body: candidate,
         });
       }
     };
 
     async function start(){
       try {
+        // 生成本地 SDP Offer，并设置为 LocalDescription，启动 ICE 收集与握手流程
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
 
+        // 将 Offer 通过 /offer 提交给服务端，等待获取包含 ICE 候选的 Answer
         const res = await fetch("/offer", {
           method: "POST",
           headers: {"Content-Type": "application/json"},
@@ -54,21 +66,25 @@
           throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         }
 
+        // 解析服务端返回的 Answer 并设置为远端描述，完成握手
         const answer = await res.json();
         await pc.setRemoteDescription(answer);
 
       } catch (err) {
+        // 错误处理：在页面显示并打印到控制台
         log(`❌ Connection failed: ${err.message}`);
         console.error("Connection error:", err);
       }
     }
 
     function sendMsg(){
+      // 确认 DataChannel 已经处于 open 状态
       if(channel.readyState !== "open"){
         log("❌ Channel not open yet");
         return;
       }
 
+      // 读取输入框内容，发送非空消息至服务端
       const msg = document.getElementById("msg").value;
 
       if (msg.trim()) {
@@ -79,9 +95,11 @@
     }
 
     function log(msg){
+      // 将日志追加到页面的 <pre> 区域，方便查看事件与消息
       document.getElementById("log").textContent+=msg+"\n";
     }
 
+    // 页面加载后即发起连接流程
     start();
   </script>
 </body>
